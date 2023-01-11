@@ -7,7 +7,7 @@ import fs from "fs";
 dotenv.config();
 
 const { PUBSUB_URI } = process.env;
-
+console.log(PUBSUB_URI);
 const app = express();
 
 let serviceClient = new WebPubSubServiceClient(PUBSUB_URI, "farmap");
@@ -32,4 +32,6 @@ app.get("/", (req, res) => {
   res.send(data);
 });
 
-app.listen(8000, () => console.log("pubsub handler is running on 8000"));
+app.listen(process.env.PORT || 8080, () =>
+  console.log("pubsub handler is running on 8000")
+);
