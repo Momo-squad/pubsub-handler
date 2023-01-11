@@ -1,7 +1,16 @@
 import express from "express";
 import { WebPubSubEventHandler } from "@azure/web-pubsub-express";
+import { WebPubSubServiceClient } from "@azure/web-pubsub";
+import dotenv from "dotenv";
+import fs from "fs";
+
+dotenv.config();
+
+const { PUBSUB_URI } = process.env;
 
 const app = express();
+
+let serviceClient = new WebPubSubServiceClient(PUBSUB_URI, "farmap");
 
 let handler = new WebPubSubEventHandler("farmap", {
   path: "/handle",
@@ -9,7 +18,9 @@ let handler = new WebPubSubEventHandler("farmap", {
     console.log(`${req.context.userId} connected`);
   },
   handleUserEvent: async (req, res) => {
-    console.log(`[${req.context.userId}] ${req.data}`);
+    let data = { userId: req.context.userId, data: req.data };
+    serviceClient.sendToAll(JSON.stringify(data));
+    fs.writeFileSync("./data.txt", `${JSON.stringify(data)} \n`);
     res.success();
   },
 });
@@ -17,7 +28,8 @@ let handler = new WebPubSubEventHandler("farmap", {
 app.use(handler.getMiddleware());
 
 app.get("/", (req, res) => {
-  res.send("working ...");
+  let data = fs.readFileSync("./data.txt", { encoding: "utf-8" });
+  res.send(data);
 });
 
 app.listen(8000, () => console.log("pubsub handler is running on 8000"));
